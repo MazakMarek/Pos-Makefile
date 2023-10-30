@@ -1,0 +1,520 @@
+Bash – príklady na precvičenie 
+Vypíšte rozšírené informácie o všetkých procesoch, ktoré bežia na serveri. 
+ps -elf
+Vypíšte prístupové práva k svojmu domovskému adresáru. 
+ls -la istvanko
+Prostredníctvom dlhého výpisu vypíšte obsah adresára, ktorý sa nachádza o 3 úrovne vyššie v súborovom systéme vzhľadom na aktuálny adresár spolu so skrytými súbormi. 
+ls -la ../../../
+Vytvorte v aktuálnom adresári skrytý adresár s názvom „secret“. 
+mkdir .secret
+Vytvorte skript, ktorý v aktuálnom adresári vytvorí skrytý adresár s názvom „secret_uid“ (namiesto uid použite vaše používateľské identifikačné číslo). Nastavte mu v skripte práva tak, aby vlastník mohol tento adresár čítať a spúšťať, zatiaľ čo skupina a všetci ostatní nemohli robiť nič. 
+
+Bez použitia príkazu cd vytvorte 5 do seba vnorených adresárov s názvami 1 až 5 a následne ich aj zmažte. 
+mkdir -p 1/2/3/4/5/
+Do textového súboru uložte všetky adresáre súborového systému, ku ktorým nemáte prístup. 
+
+Vytvorte skript, ktorý vypíše názvy súborov a adresárov v aktuálnom adresári, ktoré obsahujú 6 znakov a začínajú na "cv". 
+
+Pomocou jednoduchého skriptu vytvorte v danom adresári očíslované adresáre, ktoré sa budú volať „Adresar A“, „Adresar A+1“, „Adresar A+2“,..., „Adresar B“, kde A a B sú čísla zadané používateľom skriptu. Ak používateľ nezadá tieto čísla ako argumenty skriptu, skript si ich vypýta od používateľa. 
+#!/bin/bash
+
+if [ -z "$2"] || [ -z "$1" ]
+then
+read -p "Zadaj prve cislo: " A
+read -p "Zadaj druhe cislo: " B
+else
+A = $1
+B = $2
+fi
+
+for i in $(seq $A $B)
+do
+mkdir -p TestAdresare/Adresar_$i
+done
+Vytvorte skript, ktorý zmaže všetky adresáre (vrátane podadresárov) v danom adresári. Skript nesmie zmazať súbory, ktoré sa nachádzajú v danom adresári. 
+Vytvorte skript, ktorý nájde v adresári /tmp súbory aktuálne prihláseného používateľa a tie, ktoré sú staršie ako 14 dní, zmaže. 
+find /tmp/mc-$USER -type d -mtime +14
+#-exec rm {} \;
+# to ide na koniec, ale aby som nahodou nevymazal
+V adresári /dev nájdite všetky súbory typu znakové zariadenie, ktorých vlastníkom je používateľ root. Pri prehľadávaní adresára choďte najviac o jednu úroveň hlbšie.  
+find /dev -maxdepth 1 -type c -user root
+V adresári /home vyhľadajte všetky súbory, ktoré patria danému používateľovi a skopírujte ich do vopred zvoleného adresára. 
+find /home -user istvanko 1>test.txt
+V adresári /etc nájdite všetky súbory, ktoré obsahujú login daného používateľa, a určite, koľkokrát sa daný login nachádza v každom z týchto súborov. 
+Vytvorte funkciu, ktorá vypíše vizitku o používateľovi (login, meno, priezvisko, domovský adresár a interpreter príkazov), ktorého login je zadaný ako vstupný parameter funkcie.
+ vizitka() {
+        pouzivatel=$(cat /etc/passwd | grep $1)
+        echo $pouzivatel
+        echo $(echo $pouzivatel | cut -d : -f1)
+        echo $(echo $pouzivatel | cut -d : -f5)
+        echo $(echo $pouzivatel | cut -d : -f6)
+        echo $(echo $pouzivatel | cut -d : -f1)
+}
+
+vizitka istvanko
+Vytvorte funkciu, ktorá pre login zadaný ako vstupný parameter funkcie vypíše počet aktuálne spustených procesov daného používateľa spolu s jeho menom a priezviskom. 
+spustene_procesy() {
+        pouzivatel=$(cat /etc/passwd | cut -d : -f1,5 | grep $1)
+        echo $pouzivatel | cut -d : -f2
+        ps -u $1 | wc -l
+}
+
+spustene_procesy istvanko
+Vytvorte funkciu, ktorá pre rok zadaný ako vstupný parameter funkcie vypíše informáciu, či je daný rok priestupný alebo nie. 
+priestupnyRok() {
+        nieco=$((${1}%4))
+
+        if [[ $nieco == 0 ]]
+        then
+                echo "Priestupny"
+        else
+                echo "Nepriestupny"
+        fi
+}
+
+priestupnyRok 2022
+Vytvorte funkciu, ktorá pre login zadaný ako vstupný parameter vypíše rozdiel dĺžky zadaného loginu a loginu aktuálneho používateľa. Výsledok porovnania pripíše do súboru „rozdiel“. V prípade, že sa funkcia spusti s prepínacom „-v“, funkcia vypíše utriedený súbor „rozdiel“ do konzoly. 
+loginy() {
+        if [[$1 == "-v"]]
+        then
+        sort -n rozdiel
+        else
+        echo "$((${#1} - ${#USER}))" >> rozdiel
+        fi
+}
+
+# ak tam mam >> tak appendujem ak iba > tak prepisujem
+# to odpocitanie sa da oboma tymito sposobmi
+
+loginy()
+Vytvorte očíslovaný abecedný zoznam všetkých používateľov systému a uložte ho do súboru. 
+cislo=1
+
+for i in $(cat /etc/passwd | sort)
+do
+        echo "$cislo. " $i >> 19.txt
+        cislo=$[cislo+1]
+done
+Do riadku vypíšte loginy všetkých prihlásených požívateľov, ktorých login začína na zvolené písmeno. 
+read -p  "Zadaj zaciatocne pismeno: " A
+echo $A
+
+
+pouzivatelia=""
+for i in $(who -u | cut -d " " -f1 | grep -E "^[$A*]")
+do
+        pouzivatelia+="${i} "
+done
+
+echo $pouzivatelia
+Uložte do súboru „processes“ informácie uname, PID, PPID, STIME a CMD o aktuálne bežiacich procesoch všetkých používateľov, pričom dbajte na to, aby v uname nebol znak „+“. Následne uložte do súboru „proces_login“ všetky abecedne zoradené loginy používateľov zo súboru „processes“, pričom potlačte duplicity. 
+ps -elf | cut -d " " -f3,4,5,12,15 | while read line;
+do
+        uname=$(echo ${line} | cut -d " " -f1)
+        echo $uname
+done
+Vypíšte loginy všetkých prihlásených používateľov, ktorých login obsahuje číslice. 
+cisla="^[0-9]"
+
+for i in $(who | cut -d " " -f1)
+do
+        if [[ ${i:$[${#i}-1]} =~ $cisla ]]
+        then
+                echo $i
+        fi
+done
+Vypíšte loginy všetkých prihlásených používateľov, pričom z nich odstráňte čísla, zoraďte ich abecedne a potlačte duplicity. 
+who | cut -d " " -f1 | tr -d [0-9] | sort | uniq
+Vytvorte skript, ktorý používateľa požiada o zadanie celého čísla. Ak je zadané číslo z intervalu (-1000, 1000), tak ho následne vypíše v tvare, ktorý zodpovedá sedemsegmentovému displeju. Ak zadané číslo nie je z uvedeného rozsahu, tak skript nič nevypíše. 
+read -p "Zadaj cislo: " cislo
+
+if [[ $cislo -gt -1000 && $cislo -lt 1000 ]]
+then
+        echo $cislo
+fi
+Vytvorte skript, ktorý vypíše login, meno a priezvisko všetkých prihlásených používateľov. Výpis musí byť utriedený podľa loginu. 
+
+Vytvorte skript, ktorý vypíše mená a priezviská aktuálne prihlásených používateľov systému usporiadaných podľa priezviska. 
+
+for i in $(who | cut -d " " -f1 | sort)
+do
+        cat /etc/passwd | cut -d : -f1,5 | grep $i
+done
+Vytvorte skript, ktorý vypíše loginy všetkých používateľov, ktorí nie sú aktuálne prihlásení. 
+find /etc/passwd -exec grep -v $(who | cut -d " " -f1) {} \; | cut -d : -f2
+Vytvorte skript, ktorý vypíše mená a priezviská všetkých používateľov, ktorí nie sú aktuálne prihlásení. 
+
+Vytvorte skript, ktorý pre každého prihláseného používateľa, ktorého login obsahuje číslo, vypíše n znakov z mena, pričom n predstavuje poslednú číslicu z loginu (napr. novak3 –> Joz, bazinsky24 –> Adam). Ak je meno kratšie ako je hodnota n, tak vypíše príslušný počet znakov $ (napr. kovac8 s menom Jozef –> $$$$$$$$). 
+regExpression='^[0-9]'
+
+for i in $(who | cut -d " " -f1)
+do
+        meno=$(cat /etc/passwd | grep $i | cut -d : -f5 | cut -d " " -f1)
+        posledneCislo=${i:$[${#i} - 1]}
+        if [[ $posledneCislo =~ $regExpression ]]
+        then
+                if [[ ${#meno} < $posledneCislo ]]
+                then
+                        znaky=""
+                        for x in $(seq ${posledneCislo})
+                        do
+                                znaky+="$"
+                        done
+                        echo $znaky
+                else
+                        echo ${meno:0:posledneCislo}
+                fi
+        fi
+done
+Vytvorte skript, ktorý vypíše IP adresy všetkých aktuálne prihlásených používateľov a zoradí ich numericky. 
+who | cut -d "(" -f2 | cut -d ")" -f1 | sort
+Vytvorte skript, ktorý v aktuálnom adresári vytvorí 10 adresárov, ktorých názvy budú identické s loginmi 10 náhodne zvolených aktuálne prihlásených používateľov. Ak počet aktuálne prihlásených používateľov je menej ako 10, adresáre sa nevytvoria a skript o tom informuje používateľa prostredníctvom výpisu. 
+users=( $(who | cut -d " " -f1) )
+echo ${users[1]}
+
+if [[ $(who | wc -l) > 10 ]]
+then
+        for ((i=0; i<10; i++))
+        do
+                randomCislo=$[$RANDOM%$(who | wc -l)]
+                mkdir ./31/${users[$randomCislo]}
+        done
+else
+        echo "Menej ako 10 pouzivatelov"
+fi
+Vytvorte skript, ktorý vypíše zoznam zadaných argumentov v opačnom poradí ako boli zadané. 
+for i in $@
+do
+        echo $i
+done | tac
+Vytvorte skript, ktorý vypíše n-tý argument skriptu. Hodnotu n si skript vypýta od používateľa. 
+parameters=( $@ )
+
+read -p "Zadaj n-ty argument skritpu: " n
+echo ${parameters[$n]}
+Vytvorte skript, ktorý pre dvojicu slov zadanú ako argumenty skriptu zistí, či ide o anagramy. Ak skript nedostane dve slová ako argumenty, tak skončí a vráti hodnotu 1. V opačnom prípade vypíše informáciu o tom, či zadané slová sú anagramy a vráti hodnotu 0. Dve slová sú anagramy vtedy, ak je možné získať jedno slovo z druhého preusporiadaním znakov. 
+#!/bin/bash
+
+if [[ -z $1 || -z $2 ]]
+then
+        exit 1
+fi
+
+if [[ ${#1} == ${#2} ]]
+then
+        slovo1=$(echo ${1} | grep -o .)
+        for i in $slovo1
+        do
+                if [[ $2 =~ $i ]]
+                then
+                        continue
+                else
+                        echo "Nie su anagramy"
+                        exit 0
+                fi
+        done
+        echo "Su anagramy"
+fi
+
+exit 0
+Vytvorte skript, ktorý premenuje všetky súbory .htm a .html, ktoré obsahujú veľké písmená a nachádzajú sa v aktuálnom adresári alebo jeho podadresároch tak, aby obsahovali len malé písmená. 
+for i in $(find ./ -name "*.htm" -o -name "*.html")
+do
+        if [[ $i =~ [A-Z] ]]
+        then
+                male=$(echo ${i} | tr "[A-Z]" "[a-z]")
+                mv $i $male
+        fi
+done
+Vytvorte skript, ktorý vypíše očíslovaný zoznam všetkých spustiteľných súborov v aktuálnom adresári a následne bude čakať na vstup od používateľa, ktorý bude predstavovať poradové číslo spustiteľného súboru. Po jeho zadaní sa spustí príslušný spustiteľný súbor. 
+#find ./ -executable -type f -exec ls -l -i {} \;
+
+subory=($(find ./ -executable -type f))
+index=0
+pocitadlo=1
+#echo ${subory[@]}
+
+
+for i in ${subory[@]}
+do
+        echo "$pocitadlo. ${subory[$index]}"
+        index=$[$index+1]
+        pocitadlo=$[$pocitadlo+1]
+done
+
+read -p "Ktory subor chcete spustit? " spustit
+
+${subory[$[$spustit-1]]}
+
+#for i in $(find ./ -executable -type f -exec ls -l -i {} \;)
+#do
+#       if [[ $i == $spustit ]]
+#       then
+#               echo $i
+#       fi
+#done
+Vytvorte skript, ktorý zo súboru /etc/passwd získa predposledných 10 záznamov utriedených podľa abecedy a v aktuálnom adresári vytvorí adresáre, ktorých názov bude zodpovedať loginom jednotlivých používateľov získaných zo súboru /etc/passwd. 
+for i in $(cat /etc/passwd | cut -d : -f1 | sort | tail -n 20 | head -n 10)
+do
+        mkdir -p 37/$i
+done
+Vytvorte skript, ktorý zo súboru /etc/passwd získa priezviská všetkých používateľov. Ak sa priezvisko začína na zvolené písmeno, tak ho uloží do súboru „wanted.txt“, v opačnom prípade ho uloží do súboru „other.txt“. 
+read -p "Zvolte pismeno: " pismeno
+
+for i in $(cat /etc/passwd | cut -d : -f5 | cut -d " " -f2)
+do
+        if [[ ${i:0:1} == $pismeno ]]
+        then
+                echo $i >> 38/wanted.txt
+        else
+                echo $i >> 38/other.txt
+        fi
+done
+Vytvorte skript, ktorý pre predposledných 15 záznamov (prvých 15 z posledných 30 záznamov) zo súboru /etc/passwd vypíše login, priezvisko a interpreter príkazov. 
+for i in $(cat /etc/passwd | tail -n 30 | head -n 15 | cut -d : -f1,5,7)
+do
+        priezvisko=$(echo $i | cut -d : -f2 | cut -d " " -f2)
+        login=$(echo $i | cut -d : -f1)
+        interpreter=$(echo $i | cut -d : -f3)
+        echo "$priezvisko $login $interpreter"
+done
+Vytvorte funkciu, ktorá vypíše zo súboru /etc/passwd loginy používateľov z daného rozsahu. Funkcia bude mať 2 parametre, ktoré predstavujú čísla prvého a posledného záznamu. Napr. argumenty 50 80 znamenajú, že zo súboru /etc/passwd sa vypíšu loginy nachádzajúce sa v 50-tom až 80-tom zázname. 
+vypis() {
+        for i in $(cat /etc/passwd | tail -n +$1 | head -n $2 |  cut -d : -f1)
+        do
+                echo $i
+        done
+}
+
+vypis 20 50
+Vytvorte skript, ktorý spočíta a vypíše počet znakov v súbore /etc/passwd na riadku s používateľom, ktorého login je uložený v premennej USER. 
+pouzivatel=$(cat /etc/passwd | grep $USER)
+echo $[${#pouzivatel}-7]
+echo $(echo ${pouzivatel} | tr -d ":" | tr -d " " | wc -c)
+Vytvorte skript, ktorý bude očakávať aspoň 3 argumenty. Prvé dva argumenty definujú rozsah loginov, ktoré chceme získať zo súboru /etc/passwd. Tretí argument určuje, čo sa má so zadanými loginami spraviť: 
+ak bude mať hodnotu f, tak každý login sa uloží do súboru, ktorého názov bude predstavovať štvrtý argument skriptu, 
+ak bude mať hodnotu d, tak pre každý login sa vytvorí v aktuálnom adresári adresár, ktorého názov sa bude zhodovať s loginom. 
+Ak spustíme skript bez argumentov, zobrazí sa nápoveda, popisujúca parametre skriptu. 
+#!/bin/bash
+
+if [[ $# == 0 ]]
+then
+        echo "od do f(ulozi do suboru)/d(vytvori adresar)"
+        exit
+fi
+
+if [[ $# < 3 ]]
+then
+        exit
+fi
+
+for i in $(cat /etc/passwd | tail -n +$1 | head -n $2 | cut -d : -f1)
+do
+        echo $i
+        if [[ $3 == "f" || $3 == "F" ]]
+        then
+                array=( $@ )
+                if [[ -z ${array[3]} ]]
+                then
+                        echo "Musis napisat nazov suboru"
+                        exit
+                fi
+                echo $i >> 42/${array[3]}.txt
+        elif [[ $3 == "d" || $3 == "D" ]]
+        then
+                mkdir -p 42/loginy/$i
+        else
+                echo "Zle argumenty"
+        fi
+done
+Vytvorte skript, ktorý bude simulovať jeden hod mincou (je potrebné oznámiť, či padla hlava alebo znak). 
+hod=$[$RANDOM%2+1]
+
+if [[ $hod == 1 ]]
+then
+        echo "Padla hlava"
+elif [[ $hod == 2 ]]
+then
+        echo "Padol znak"
+fi
+Vytvorte skript, ktorý vypíše výsledok dvoch hodov kockou, pričom ak je ich súčet 2 vypíše informáciu „Smola!“ a ak je ich súčet 12 vypíše informáciu „Jackpot!“. 
+sucetHodov=$[$[$RANDOM%6+1] + $[$RANDOM%6+1]]
+echo $sucetHodov
+
+if [[ $sucetHodov -eq 2 ]]
+then
+        echo "Smola!"
+elif [[ $sucetHodov -eq 12 ]]
+then
+        echo "Jackpot!"
+fi
+Vytvorte skript, ktorý vypíše výsledok 8 hodov kockou (sumu a jednotlivé hodnoty hodov). Ak je ich súčet 23, vypíše informáciu „Trefa!“. Ak je počet ľubovoľných rovnakých hodnôt hodov rovný 2, vypíše informáciu „Gratulujem! znak(y) ... splnil tajnú podmienku!“ (miesto ... dajte príslušný znak, resp. znaky). 
+hody=()
+
+suma=0
+stringHody=""
+hodyRiadky=""
+
+for (( i=0;i<8;i++  ))
+do
+        hod=$[$RANDOM%6+1]
+        hody+=( $hod )
+        suma=$[$suma+$hod]
+done
+
+for (( i=0;i<8;i++ ))
+do
+        stringHody+="${hody[$i]} "
+        hodyRiadky+="${hody[$i]}"\n
+done
+
+echo $stringHody
+echo "---------"
+echo $suma
+echo "---------"
+
+
+if [[ $suma == 23 ]]
+then
+        echo "Trefa!"
+fi
+
+pocetHodovCisla=(0 0 0 0 0 0)
+
+for i in ${hody[@]}
+do
+        index=$[$i-1]
+        pocetHodovCisla[$index]=$[pocetHodovCisla[$index] + 1]
+done
+
+splnil=""
+for i in $(seq 0 5)
+do
+        if [[ ${pocetHodovCisla[$i]} == 2 ]]
+        then
+                splnil+="$[$i+1] "
+        fi
+done
+
+if [[ -z $splnil ]]
+then
+        exit
+fi
+
+echo "Gratulujem! $splnil splnil/i tajnu podmienku"
+Vytvorte funkciu, ktorá bude predstavovať bombu a pokiaľ používateľ nezadá správne heslo (náhodne číslo od 1 do 10) pri najhoršom na 3. pokus, tak skonči proces s id získaním pomocou $$. 
+pokusCislo=0
+randomCislo=$[$RANDOM%10+1]
+echo $randomCislo
+
+while [[ $pokusCislo < 3 ]]
+do
+        read -p "Zadajte cislo: " cislo
+        if [[ $cislo == $randomCislo ]]
+        then
+                echo "Trafil si"
+                exit
+        fi
+        pokusCislo=$[$pokusCislo+1]
+done
+
+echo "Bomba vybuchla"
+exit $$
+Vytvorte skript, ktorý bude načítavať slová z klávesnice, až kým sa nezadá slovo „q“. Každé slovo umiestni do súboru, ktorého názov sa zhoduje s prvým znakom v slove (napr. slovo „ahoj“ uloží do súboru a, slovo „beta“ do súboru b atď.). 
+nacitaneSlovo=""
+
+while true
+do
+        read -p "Zadajte slovo: " nacitaneSlovo
+        if [[ $nacitaneSlovo == "q" ]]
+        then
+                exit
+        fi
+        prvyZnak=${nacitaneSlovo:0:1}
+        echo $nacitaneSlovo >> 47/$prvyZnak.txt
+done
+Vytvorte skript, ktorý bude načítavať slová od používateľa. V prípade, že načítané slovo bude začínať na niektoré písmeno z reťazca $USER, uloží sa do súboru „moje_slova“. Načítavanie sa ukončí po načítaní 25 slov alebo pri zadaní slova „q“. Po skončení sa súbor „moje_slova“ utriedi zostupne (od z po a) a výsledok sa uloží do súboru „moje_slova_u“. 
+pismena=($(echo $USER | grep -o .))
+user=$(echo $USER | grep -o . | tr -d " ")
+pocetSlov=0
+
+while true
+do
+        read -p "Zadajte slovo: " nacitaneSlovo
+        if [[ $nacitaneSlovo == "q" || $pocetSlov -gt 24 ]]
+        then
+                sort -r 48/moje_slova.txt >> 48/moje_slova_u.txt
+                exit
+        fi
+        if [[ $user =~ ${nacitaneSlovo:0:1} ]]
+        then
+                echo $nacitaneSlovo >> 48/moje_slova.txt
+        fi
+        pocetSlov=$[$pocetSlov+1]
+        echo $pocetSlov
+done
+Vytvorte skript, ktorý bude načítavať slová z klávesnice, až kým sa nezadá slovo „q“. Skript bude pracovať v dvoch režimoch: 
+v prvom režime sa budú načítané slová ukladať v utriedenom poradí do vopred definovaného súboru (t. j. po skončení skriptu musia byť slová v tomto súbore utriedené podľa abecedy), 
+v druhom režime sa na základe každého slova vytvorí adresár, ktorého názov sa bude zhodovať s názvom zadaného slova. 
+Používateľ sa prepne z jedného režimu do druhého, ak zadá slovo „heslo“. 
+rezimCelkovo=1
+rezim=1
+
+while true
+do
+        read -p "Zadaj slovo: " nacitaneSlovo
+        if [[ $nacitaneSlovo == "q" ]]
+        then
+                exit
+        fi
+        if [[ $nacitaneSlovo == "heslo" ]]
+        then
+                rezimCelkovo=$[$rezimCelkovo+1]
+                rezim=$[$rezimCelkovo%2+1]
+                echo $rezim
+        fi
+
+        if [[ $rezim == 1 ]]
+        then
+                echo $nacitaneSlovo >> 49/utriedene_slova.txt
+                sort -o 49/utriedene_slova.txt 49/utriedene_slova.txt
+        elif [[ $rezim == 2 ]]
+        then
+                mkdir -p 49/$nacitaneSlovo 2>/dev/null
+        fi
+done
+
+sort -o 49/utriedene_slova.txt 49/utriedene_slova.txt
+Vytvorte skript, ktorý ako parameter dostane rodné číslo (9 alebo 10 znakov v závislosti od dátumu narodenia), skontroluje jeho platnosť (platný dátum narodenia a deliteľnosť číslom 11 v prípade rodného čísla obsahujúceho 10 znakov) a ak je rodné číslo platné, tak vypíše dátum, kedy sa osoba s daným rodným číslom narodila a aké má pohlavie. 
+Ak rodné číslo nie je platné, tak sa vypíše informáciu o neplatnosti rodného čísla. 
+rodneCislo=$1
+platne=false
+
+rodneCisloZnaky=( $(echo $rodneCislo | grep -o .) )
+
+if [[ $[$rodneCislo%11] == 0 ]]
+then
+        platne=true
+else
+        echo "Neplatne rodne cislo"
+        exit
+fi
+
+if [[ $platne == true ]]
+then
+        if [[ ${#rodneCislo} == 9 ]]
+        then
+                den=${rodneCislo:3:2}
+                mesiac=${rodneCislo:1:2}
+                mesiac=$[$mesiac%12]
+                rok=${rodneCislo:0:1}
+                echo "$den. $mesiac. 0$rok"
+
+        else
+                den=${rodneCislo:4:2}
+                mesiac=${rodneCislo:2:2}
+                mesiac=$[$mesiac%12]
+                rok=${rodneCislo:0:2}
+                echo "$den. $mesiac. $rok"
+        fi
+fi
